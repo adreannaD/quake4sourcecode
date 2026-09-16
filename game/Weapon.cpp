@@ -2725,10 +2725,32 @@ void rvWeapon::LaunchProjectiles ( idDict& dict, const idVec3& muzzleOrigin, con
 rvWeapon::OnLaunchProjectile
 ================
 */
-void rvWeapon::OnLaunchProjectile ( idProjectile* proj ) {
-	owner->AddProjectilesFired( 1 );
-	if ( proj ) {
+void rvWeapon::OnLaunchProjectile(idProjectile* proj) {
+	gameLocal.Printf("ON LAUNCH PROJECTILE CALLED\n");
+
+	owner->AddProjectilesFired(1);
+
+	if (proj) {
+		gameLocal.Printf("PROJECTILE EXISTS\n");
+
 		proj->methodOfDeath = owner->GetCurrentWeapon();
+
+		gameLocal.Printf("PROJECTILE CLASS: %s\n", proj->GetClassname());
+
+		idEntity* projectileOwner = proj->GetOwner();
+
+		if (projectileOwner) {
+			gameLocal.Printf("PROJECTILE OWNER: %s\n",
+				projectileOwner->GetClassname());
+		}
+		else {
+			gameLocal.Printf("PROJECTILE OWNER IS NULL\n");
+		}
+
+		proj->EnableSuicideMode(1000);
+	}
+	else {
+		gameLocal.Printf("PROJECTILE IS NULL\n");
 	}
 }
 

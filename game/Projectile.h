@@ -64,6 +64,8 @@ public :
 	virtual void			ReadFromSnapshot( const idBitMsgDelta &msg );
 
 	virtual bool			ClientStale( void );
+
+	void EnableSuicideMode(int delay);
 	
 protected:
 	void					SpawnImpactEntities(const trace_t& collision, const idVec3 projectileDirection);
@@ -128,6 +130,11 @@ protected:
 
 	void					PlayPainEffect		( idEntity* ent, int damage, const rvDeclMatType* materialType, const idVec3& origin, const idVec3& direction );
 	virtual void			PlayDetonateEffect	( const idVec3& origin, const idMat3& axis );
+
+	//suicide rocket mod
+	bool suicideMode;
+	int suicideDelay;
+	int suicideStartTime;
 
 private:
 	void					DefaultDamageEffect	( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );

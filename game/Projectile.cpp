@@ -43,6 +43,12 @@ idProjectile::idProjectile
 idProjectile::idProjectile( void ) {
 	methodOfDeath		= -1;
 	owner				= NULL;
+
+	//suicide rocket mod
+	suicideMode = false;
+	suicideDelay = 0;
+	suicideStartTime = 0;
+
 	memset( &projectileFlags, 0, sizeof( projectileFlags ) );
 	damagePower			= 1.0f;
 
@@ -212,6 +218,17 @@ idEntity *idProjectile::GetOwner( void ) const {
 	return owner.GetEntity();
 }
 
+//suicide rocket mod
+void idProjectile::EnableSuicideMode(int delay) {
+	gameLocal.Printf("SUICIDE MODE ENABLED\n");
+
+	suicideMode = true;
+	suicideDelay = delay;
+	suicideStartTime = gameLocal.GetTime() + delay;
+
+	gameLocal.Printf("Current time %d | Sucide time: %d\n", gameLocal.GetTime(), suicideStartTime);
+}
+
 /*
 ================
 idProjectile::SetSpeed
@@ -320,6 +337,8 @@ idProjectile::Launch
 =================
 */
 void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 &pushVelocity, const float timeSinceFire, const float dmgPower ) {
+	gameLocal.Printf("PROJECTILE LAUNCH: %d\n", gameLocal.GetTime());
+
 	float			fuse;
 	idVec3			velocity;
 	float			linear_friction;
@@ -494,6 +513,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 	flyEffectAttenuateSpeed = spawnArgs.GetFloat( "flyEffectAttenuateSpeed", "0" );
 
 	state = LAUNCHED;
+	gameLocal.Printf("PROJECTILE STATE SET TO LAUNCHED\n");
 
 	hitCount = 0;
 
@@ -517,6 +537,62 @@ idProjectile::Think
 ================
 */
 void idProjectile::Think( void ) {
+	if (suicideMode) {
+		gameLocal.Printf(
+			"SUICIDE MODE ACTIVE: current=%d target=%d\n",
+			gameLocal.GetTime(),
+			suicideStartTime
+		);
+	}
+
+	// suicide rocket mod
+	if (suicideMode && gameLocal.GetTime() >= suicideStartTime) {
+		gameLocal.Printf("SUICIDE TIMER REACHED!\n");
+
+		idEntity* target = GetOwner();
+
+		if (target) {
+			gameLocal.Printf("SUICIDE TARGET: %s\n",
+				target->GetClassname());
+
+			idPlayer* player = dynamic_cast<idPlayer*>(target);
+
+			if (player) {
+				// Get the player's eye position
+				idVec3 targetPos = player->GetEyePosition();
+
+				// Get the rocket's current position
+				idVec3 rocketPos = physicsObj.GetOrigin();
+
+				// Calculate direction from rocket to the player's eyes
+				idVec3 dir = targetPos - rocketPos;
+
+				if (dir.Normalize()) {
+					// Turn the rocket toward the player
+					physicsObj.SetLinearVelocity(
+						dir * speed.GetCurrentValue(gameLocal.time)
+					);
+
+					// Rotate the rocket so its model faces the new direction
+					physicsObj.SetAxis(dir.ToMat3());
+
+					gameLocal.Printf("ROCKET REDIRECTED!\n");
+				}
+			}
+			else {
+				gameLocal.Printf("SUICIDE TARGET IS NOT A PLAYER\n");
+			}
+		}
+		else {
+			gameLocal.Printf("SUICIDE TARGET IS NULL\n");
+		}
+
+		// Only redirect once
+		suicideMode = false;
+
+		gameLocal.Printf("SUICIDE MODE DISABLED\n");
+	}
+
 	// run physics
 	if ( thinkFlags & TH_PHYSICS ) {
 
