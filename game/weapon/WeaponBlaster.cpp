@@ -26,13 +26,13 @@ protected:
 	void				Flashlight			( bool on );
 
 private:
-
+	/*
 	int					chargeTime;
 	int					chargeDelay;
 	idVec2				chargeGlow;
 	bool				fireForced;
 	int					fireHeldTime;
-
+	*/
 	stateResult_t		State_Raise				( const stateParms_t& parms );
 	stateResult_t		State_Lower				( const stateParms_t& parms );
 	stateResult_t		State_Idle				( const stateParms_t& parms );
@@ -91,7 +91,8 @@ void rvWeaponBlaster::Flashlight ( bool on ) {
 rvWeaponBlaster::UpdateAttack
 ================
 */
-bool rvWeaponBlaster::UpdateAttack ( void ) {
+bool rvWeaponBlaster::UpdateAttack(void) {
+	/*
 	// Clear fire forced
 	if ( fireForced ) {
 		if ( !wsfl.attack ) {
@@ -100,19 +101,32 @@ bool rvWeaponBlaster::UpdateAttack ( void ) {
 			return false;
 		}
 	}
+	*/
 
+	// If the player is pressing the fire button and enough time has passed,
+	// fire a normal Isaac's Tear.
+	if (wsfl.attack && gameLocal.time >= nextAttackTime) {
+		SetState("Fire", 0);
+
+		// Set the next time the weapon can fire.
+		nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier(PMOD_FIRERATE));
+
+		return true;
+	}
+
+	/*
 	// If the player is pressing the fire button and they have enough ammo for a shot
 	// then start the shooting process.
 	if ( wsfl.attack && gameLocal.time >= nextAttackTime ) {
 		// Save the time which the fire button was pressed
-		if ( fireHeldTime == 0 ) {		
+		if ( fireHeldTime == 0 ) {
 			nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( PMOD_FIRERATE ));
 			fireHeldTime   = gameLocal.time;
 			viewModel->SetShaderParm ( BLASTER_SPARM_CHARGEGLOW, chargeGlow[0] );
 		}
-	}		
+	}
 
-	// If they have the charge mod and they have overcome the initial charge 
+	// If they have the charge mod and they have overcome the initial charge
 	// delay then transition to the charge state.
 	if ( fireHeldTime != 0 ) {
 		if ( gameLocal.time - fireHeldTime > chargeDelay ) {
@@ -120,12 +134,12 @@ bool rvWeaponBlaster::UpdateAttack ( void ) {
 			return true;
 		}
 
-		// If the fire button was let go but was pressed at one point then 
+		// If the fire button was let go but was pressed at one point then
 		// release the shot.
 		if ( !wsfl.attack ) {
 			idPlayer * player = gameLocal.GetLocalPlayer();
 			if( player )	{
-			
+
 				if( player->GuiActive())	{
 					//make sure the player isn't looking at a gui first
 					SetState ( "Lower", 0 );
@@ -136,7 +150,8 @@ bool rvWeaponBlaster::UpdateAttack ( void ) {
 			return true;
 		}
 	}
-	
+	*/
+
 	return false;
 }
 
@@ -149,13 +164,15 @@ void rvWeaponBlaster::Spawn ( void ) {
 	viewModel->SetShaderParm ( BLASTER_SPARM_CHARGEGLOW, 0 );
 	SetState ( "Raise", 0 );
 	
+	/*
 	chargeGlow   = spawnArgs.GetVec2 ( "chargeGlow" );
 	chargeTime   = SEC2MS ( spawnArgs.GetFloat ( "chargeTime" ) );
 	chargeDelay  = SEC2MS ( spawnArgs.GetFloat ( "chargeDelay" ) );
 
 	fireHeldTime		= 0;
 	fireForced			= false;
-			
+	*/
+
 	Flashlight ( owner->IsFlashlightOn() );
 }
 
@@ -165,11 +182,13 @@ rvWeaponBlaster::Save
 ================
 */
 void rvWeaponBlaster::Save ( idSaveGame *savefile ) const {
+	/*
 	savefile->WriteInt ( chargeTime );
 	savefile->WriteInt ( chargeDelay );
 	savefile->WriteVec2 ( chargeGlow );
 	savefile->WriteBool ( fireForced );
 	savefile->WriteInt ( fireHeldTime );
+	*/
 }
 
 /*
@@ -178,11 +197,13 @@ rvWeaponBlaster::Restore
 ================
 */
 void rvWeaponBlaster::Restore ( idRestoreGame *savefile ) {
+	/*
 	savefile->ReadInt ( chargeTime );
 	savefile->ReadInt ( chargeDelay );
 	savefile->ReadVec2 ( chargeGlow );
 	savefile->ReadBool ( fireForced );
 	savefile->ReadInt ( fireHeldTime );
+	*/
 }
 
 /*
@@ -221,8 +242,8 @@ CLASS_STATES_DECLARATION ( rvWeaponBlaster )
 	STATE ( "Raise",						rvWeaponBlaster::State_Raise )
 	STATE ( "Lower",						rvWeaponBlaster::State_Lower )
 	STATE ( "Idle",							rvWeaponBlaster::State_Idle)
-	STATE ( "Charge",						rvWeaponBlaster::State_Charge )
-	STATE ( "Charged",						rvWeaponBlaster::State_Charged )
+	//STATE ( "Charge",						rvWeaponBlaster::State_Charge )
+	//STATE ( "Charged",						rvWeaponBlaster::State_Charged )
 	STATE ( "Fire",							rvWeaponBlaster::State_Fire )
 	STATE ( "Flashlight",					rvWeaponBlaster::State_Flashlight )
 END_CLASS_STATES
@@ -329,6 +350,7 @@ stateResult_t rvWeaponBlaster::State_Idle ( const stateParms_t& parms ) {
 rvWeaponBlaster::State_Charge
 ================
 */
+/*
 stateResult_t rvWeaponBlaster::State_Charge ( const stateParms_t& parms ) {
 	enum {
 		CHARGE_INIT,
@@ -361,12 +383,14 @@ stateResult_t rvWeaponBlaster::State_Charge ( const stateParms_t& parms ) {
 	}
 	return SRESULT_ERROR;	
 }
+*/
 
 /*
 ================
 rvWeaponBlaster::State_Charged
 ================
 */
+/*
 stateResult_t rvWeaponBlaster::State_Charged ( const stateParms_t& parms ) {
 	enum {
 		CHARGED_INIT,
@@ -391,6 +415,8 @@ stateResult_t rvWeaponBlaster::State_Charged ( const stateParms_t& parms ) {
 	}
 	return SRESULT_ERROR;
 }
+*/
+
 
 /*
 ================
@@ -413,29 +439,24 @@ stateResult_t rvWeaponBlaster::State_Fire ( const stateParms_t& parms ) {
 
 			//make sure the player isn't looking at a gui first
 			if( player && player->GuiActive() )	{
-				fireHeldTime = 0;
+				//fireHeldTime = 0;
 				SetState ( "Lower", 0 );
 				return SRESULT_DONE;
 			}
 
 			if( player && !player->CanFire() )	{
-				fireHeldTime = 0;
+				//fireHeldTime = 0;
 				SetState ( "Idle", 4 );
 				return SRESULT_DONE;
 			}
 
 
 	
-			if ( gameLocal.time - fireHeldTime > chargeTime ) {	
-				Attack ( true, 1, spread, 0, 1.0f );
-				PlayEffect ( "fx_chargedflash", barrelJointView, false );
-				PlayAnim( ANIMCHANNEL_ALL, "chargedfire", parms.blendFrames );
-			} else {
-				Attack ( false, 1, spread, 0, 1.0f );
-				PlayEffect ( "fx_normalflash", barrelJointView, false );
-				PlayAnim( ANIMCHANNEL_ALL, "fire", parms.blendFrames );
-			}
-			fireHeldTime = 0;
+			Attack(false, 1, spread, 0, 1.0f);
+			PlayEffect("fx_normalflash", barrelJointView, false);
+			PlayAnim(ANIMCHANNEL_ALL, "fire", parms.blendFrames);
+
+			//fireHeldTime = 0;
 			
 			return SRESULT_STAGE(FIRE_WAIT);
 		
