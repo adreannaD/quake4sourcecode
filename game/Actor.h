@@ -180,6 +180,9 @@ public:
 							// damage
 	void					SetupDamageGroups( void );
 
+	//poison tears
+	void ApplyPoison(int duration);
+
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
 // RAVEN BEGIN
 // nmckenzie: a final hook in the middle of the damage function
@@ -312,6 +315,10 @@ protected:
 	bool					allowEyeFocus;
 	bool					finalBoss;
 
+	//poison tears
+	bool poisoned;
+	int poisonEndTime;
+
 	int						painTime;
 
 	idList<idAttachInfo>	attachments;
@@ -397,6 +404,10 @@ private:
 	void					Event_SetAnimRate	( float multiplier );
 	void					Event_DamageOverTime ( int endTime, int interval, idEntity *inflictor, idEntity *attacker, idVec3 &dir, const char *damageDefName, const float damageScale, int location );
 	virtual void			Event_DamageOverTimeEffect	( int endTime, int interval, const char *damageDefName );
+	
+	//poison tears
+	void					Event_PoisonTick(void);
+	
 	void					Event_JointCrawlEffect ( const char *effectKeyName, float crawlSecs );
 
 	CLASS_STATES_PROTOTYPE ( idActor );

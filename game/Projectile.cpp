@@ -892,6 +892,21 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 			}	
 // RAVEN END
  			ent->Damage( this, owner, dir, damageDefName, damagePower, hitJoint );
+
+			//poison tears
+			if (!idStr::Icmp(damageDefName, "damage_nailDirect") &&
+				ent->IsType(idActor::GetClassType())) {
+
+				idActor* hitActor = static_cast<idActor*>(ent);
+				hitActor->ApplyPoison(3000);
+			}
+
+			//freezing tears
+			if (!idStr::Icmp(damageDefName, "damage_hyperblaster") &&
+				ent->IsType(idAI::GetClassType())) {
+				idAI* hitAI = static_cast<idAI*>(ent);
+				hitAI->Freeze(2000);
+			}
 			
 			if( owner && owner->IsType( idPlayer::GetClassType() ) && ent->IsType( idActor::GetClassType() ) ) {
 				statManager->WeaponHit( (const idActor*)(owner.GetEntity()), ent, methodOfDeath, hitCount == 0 );			

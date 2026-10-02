@@ -607,6 +607,11 @@ void idAI::Spawn( void ) {
 	jointHandle_t		joint;
 	idVec3				local_dir;
 
+	//freezing tears
+	frozen = false;
+	freezeWasDisabled = false;
+	freezeEndTime = 0;
+
 	// Are all monsters disabled?
 	if ( !g_monsters.GetBool() ) {
 		PostEventMS( &EV_Remove, 0 );
@@ -1132,10 +1137,29 @@ bool idAI::DoDormantTests ( void ) {
 
 /*
 =====================
+idAI::Freeze
+=====================
+*/
+void idAI::Freeze(int duration) {
+	frozen = true;
+	freezeWasDisabled = move.fl.disabled;
+	freezeEndTime = gameLocal.time + duration;
+
+	//disable movement while frozen
+	move.fl.disabled = true;
+}
+
+/*
+=====================
 idAI::Think
 =====================
 */
 void idAI::Think( void ) {
+	//freezing Tears
+	if (frozen && gameLocal.time >= freezeEndTime) {
+		frozen = false;
+		move.fl.disabled = freezeWasDisabled;
+	}
 
 	// if we are completely closed off from the player, don't do anything at all
 	if ( CheckDormant() ) {
@@ -1187,7 +1211,7 @@ void idAI::Think( void ) {
 		if ( !move.fl.allowHiddenMove && IsHidden() ) {
 			// hidden monsters
 			UpdateStates ();
-		} else if( !ai_freeze.GetBool() ) {
+		} else if (!ai_freeze.GetBool() && !frozen) {
 			Prethink(); 
 
 			// clear the ik before we do anything else so the skeleton doesn't get updated twice

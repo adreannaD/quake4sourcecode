@@ -341,6 +341,10 @@ const idEventDef AI_SetAnimRate ( "setAnimRate","f");
 //MCG: damage over time
 const idEventDef EV_DamageOverTime ( "damageOverTime","ddEEvsfd" );
 const idEventDef EV_DamageOverTimeEffect ( "damageOverTimeEffect","dds" );
+
+//poison tears
+const idEventDef EV_PoisonTick("poisonTick");
+
 // MCG: script-callable joint crawl effect
 const idEventDef EV_JointCrawlEffect ( "jointCrawlEffect","sf" );
 
@@ -394,6 +398,10 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 // MCG: added recurring damage
 	EVENT( EV_DamageOverTime,			idActor::Event_DamageOverTime )
 	EVENT( EV_DamageOverTimeEffect,		idActor::Event_DamageOverTimeEffect )
+
+	//poison tears
+	EVENT( EV_PoisonTick, idActor::Event_PoisonTick )
+
 // MCG: script-callable joint crawl effect
 	EVENT( EV_JointCrawlEffect,			idActor::Event_JointCrawlEffect )
 // RAVEN END
@@ -437,6 +445,11 @@ idActor::idActor( void )
 	deltaViewAngles.Zero();
 
 	painTime			= 0;
+
+	//poison tears
+	poisoned = false;
+	poisonEndTime = 0;
+
 	inDamageEvent		= false;
 // RAVEN BEGIN
 // bdube: reversed var
@@ -1472,6 +1485,25 @@ void idActor::Event_Flashlight( bool on ) {
 	}
 }
 
+//poison tears
+void idActor::Event_PoisonTick(void) {
+	if (!poisoned) {
+		return;
+	}
+
+	gameLocal.Printf("POISON TICK: %s\n", GetName());
+
+	health -= 5;
+
+	if (gameLocal.GetTime() < poisonEndTime) {
+		PostEventMS(&EV_PoisonTick, 1000);
+	}
+	else {
+		poisoned = false;
+		gameLocal.Printf("POISON ENDED: %s\n", GetName());
+	}
+}
+
 /*
 =====================
 idActor::FlashlightUpdate
@@ -2359,6 +2391,20 @@ void idActor::CheckDeathObjectives( void )
 		player->CompleteObjective( spawnArgs.GetString( "objectivetitle_completed" ) );
 	}
 }
+
+//poison tears
+void idActor::ApplyPoison(int duration) {
+	if (poisoned) {
+		return;
+	}
+
+	poisoned = true;
+	poisonEndTime = gameLocal.GetTime() + duration;
+	PostEventMS(&EV_PoisonTick, 1000);
+
+	gameLocal.Printf("POISON APPLIED: %s\n", GetName());
+}
+
 /*
 ============
 idActor::Damage

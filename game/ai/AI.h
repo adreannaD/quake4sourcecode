@@ -491,6 +491,13 @@ public:
 	idMoveState				move;
 	idMoveState				savedMove;
 
+	//freezing tears
+	bool frozen;
+	bool freezeWasDisabled;
+	int freezeEndTime;
+
+	void Freeze(int duration);
+
 	// physics
 	idPhysics_Monster		physicsObj;
 	
