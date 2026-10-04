@@ -457,13 +457,52 @@ void rvDarkMatterProjectile::Restore ( idRestoreGame *savefile ) {
 rvDarkMatterProjectile::Think
 ================
 */
-void rvDarkMatterProjectile::Think ( void ) {
-	physicsObj.SetClipMask( MASK_DMGSOLID );
-	idProjectile::Think ( );
+void rvDarkMatterProjectile::Think(void) {
+	physicsObj.SetClipMask(MASK_DMGSOLID);
+	idProjectile::Think();
 
-	if ( gameLocal.time > nextDamageTime ) {
-		gameLocal.RadiusDamage ( GetPhysics()->GetOrigin(), this, owner, owner, NULL, spawnArgs.GetString( "def_radius_damage" ), 1.0f, &hitCount );
-		nextDamageTime = gameLocal.time + SEC2MS ( spawnArgs.GetFloat ( "damageRate", ".05" ) );	
+	//death's touch
+	// The projectile now deals direct damage to actors it passes through.
+	if (gameLocal.time > nextDamageTime) {
+		trace_t tr;
+		idVec3 start;
+		idVec3 end;
+		idVec3 direction;
+
+		start = GetPhysics()->GetOrigin();
+		direction = GetPhysics()->GetLinearVelocity();
+
+		if (direction.LengthSqr() > 0.0f) {
+			direction.Normalize();
+		}
+
+		end = start + direction * 20.0f;
+
+		gameLocal.TracePoint(
+			owner,
+			tr,
+			start,
+			end,
+			MASK_SHOT_RENDERMODEL,
+			owner
+		);
+
+		if (tr.fraction < 1.0f && tr.c.entityNum != ENTITYNUM_WORLD) {
+			idEntity* ent = gameLocal.entities[tr.c.entityNum];
+
+			if (ent && ent->fl.takedamage) {
+				ent->Damage(
+					owner,
+					owner,
+					direction,
+					"damage_dmg_fly",
+					1.0f,
+					0
+				);
+			}
+		}
+
+		nextDamageTime = gameLocal.time + 50;
 	}
 }
 
