@@ -1226,6 +1226,43 @@ void idProjectile::Explode( const trace_t *collision, const bool showExplodeFX, 
 		Event_RadiusDamage( ignore );
 	}
 
+	// Haemolacria
+	if (!idStr::Icmp(spawnArgs.GetString("def_damage"), "damage_haemolacria")) {
+		const char* tearDef = "projectile_haemolacria_small";
+		const int count = 5;
+
+		idVec3 burstOrigin = endpos + normal * 10.0f;
+		idVec3 side = normal.ToMat3()[1];
+
+		for (int i = 0; i < count; i++) {
+			float angle = (360.0f / count) * i;
+			idMat3 axisMat = side.ToMat3();
+			axisMat.RotateArbitrary(normal, angle);
+
+			idProjectile* tear = static_cast<idProjectile*>(
+				gameLocal.SpawnEntityDef(tearDef)
+				);
+
+			if (tear) {
+				idVec3 direction = axisMat[0] * 0.8f + normal * 0.6f;
+				direction.Normalize();
+
+				tear->Create(
+					owner,
+					burstOrigin,
+					direction,
+					this
+				);
+
+				tear->Launch(
+					burstOrigin,
+					direction,
+					direction
+				);
+			}
+		}
+	}
+
 	// Residual damage (damage over time)
 	delay = SEC2MS ( spawnArgs.GetFloat ( "delay_residual" ) );
 	if ( delay > 0.0f ) {
