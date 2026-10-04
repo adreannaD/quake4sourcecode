@@ -49,6 +49,21 @@ protected:
 
 	bool								idleEmpty;
 
+	//brimstone
+	bool brimstoneCharging;
+	bool brimstoneFiring;
+	int brimstoneChargeStartTime;
+	int brimstoneNextDamageTime;
+	int brimstoneDamageTicks;
+	float brimstoneRange;
+	rvClientEntityPtr<rvClientEffect> brimstoneTrailEffect;
+	idVec3 brimstoneEndPoint;
+
+	void StartBrimstoneBeam(void);
+	void StopBrimstoneBeam(void);
+	void UpdateBrimstoneBeam(void);
+	void BrimstoneDamage(void);
+
 private:
 
 	stateResult_t		State_Idle				( const stateParms_t& parms );
@@ -130,6 +145,15 @@ void rvWeaponRocketLauncher::Spawn ( void ) {
 
 	SetState ( "Raise", 0 );	
 	SetRocketState ( "Rocket_Idle", 0 );
+
+	//brimstone
+	brimstoneCharging = false;
+	brimstoneFiring = false;
+	brimstoneChargeStartTime = 0;
+	brimstoneNextDamageTime = 0;
+	brimstoneDamageTicks = 0;
+	brimstoneRange = 10000.0f;
+	brimstoneEndPoint = vec3_zero;
 }
 
 /*
@@ -138,6 +162,34 @@ rvWeaponRocketLauncher::Think
 ================
 */
 void rvWeaponRocketLauncher::Think ( void ) {	
+	//brimstone
+	if (brimstoneCharging && !brimstoneFiring) {
+		if (gameLocal.time >= brimstoneChargeStartTime + 2000) {
+			brimstoneCharging = false;
+			brimstoneFiring = true;
+			brimstoneDamageTicks = 0;
+			brimstoneNextDamageTime = gameLocal.time;
+
+			UpdateBrimstoneBeam();
+
+			idVec3 dir;
+			dir = brimstoneEndPoint - playerViewOrigin;
+			dir.Normalize();
+
+			brimstoneTrailEffect = gameLocal.PlayEffect(
+				gameLocal.GetEffect(weaponDef->dict, "fx_trail"),
+				playerViewOrigin,
+				dir.ToMat3(),
+				true,
+				brimstoneEndPoint
+			);
+		}
+	}
+
+	if (brimstoneFiring) {
+		UpdateBrimstoneBeam();
+	}
+
 	trace_t	tr;
 	int		i;
 
@@ -438,29 +490,37 @@ stateResult_t rvWeaponRocketLauncher::State_Idle( const stateParms_t& parms ) {
 rvWeaponRocketLauncher::State_Fire
 ================
 */
-stateResult_t rvWeaponRocketLauncher::State_Fire ( const stateParms_t& parms ) {
+stateResult_t rvWeaponRocketLauncher::State_Fire(const stateParms_t& parms) {
 	enum {
 		STAGE_INIT,
 		STAGE_WAIT,
-	};	
-	switch ( parms.stage ) {
-		case STAGE_INIT:
-			nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier ( PMOD_FIRERATE ));		
-			Attack ( false, 1, spread, 0, 1.0f );
-			PlayAnim ( ANIMCHANNEL_LEGS, "fire", parms.blendFrames );	
-			return SRESULT_STAGE ( STAGE_WAIT );
-	
-		case STAGE_WAIT:			
-			if ( wsfl.attack && gameLocal.time >= nextAttackTime && ( gameLocal.isClient || AmmoInClip ( ) ) && !wsfl.lowerWeapon ) {
-				SetState ( "Fire", 0 );
-				return SRESULT_DONE;
-			}
-			if ( gameLocal.time > nextAttackTime && AnimDone ( ANIMCHANNEL_LEGS, 4 ) ) {
-				SetState ( "Idle", 4 );
-				return SRESULT_DONE;
-			}
-			return SRESULT_WAIT;
+	};
+
+	switch (parms.stage) {
+	case STAGE_INIT:
+		nextAttackTime = gameLocal.time + (fireRate * owner->PowerUpModifier(PMOD_FIRERATE));
+		//Attack ( false, 1, spread, 0, 1.0f );
+
+		//brimstone
+		if (!brimstoneFiring) {
+			StartBrimstoneBeam();
+		}
+
+		PlayAnim(ANIMCHANNEL_LEGS, "fire", parms.blendFrames);
+		return SRESULT_STAGE(STAGE_WAIT);
+
+	case STAGE_WAIT:
+		//brimstone
+		if (!wsfl.attack) {
+			brimstoneCharging = false;
+			StopBrimstoneBeam();
+			SetState("Idle", 4);
+			return SRESULT_DONE;
+		}
+
+		return SRESULT_WAIT;
 	}
+
 	return SRESULT_ERROR;
 }
 
@@ -581,3 +641,120 @@ stateResult_t rvWeaponRocketLauncher::Frame_AddToClip ( const stateParms_t& parm
 	return SRESULT_OK;
 }
 
+/*
+=====================
+rvWeaponRocketLauncher::StartBrimstoneBeam
+=====================
+*/
+void rvWeaponRocketLauncher::StartBrimstoneBeam(void) {
+	brimstoneCharging = true;
+	brimstoneFiring = false;
+	brimstoneChargeStartTime = gameLocal.time;
+	brimstoneDamageTicks = 0;
+}
+
+/*
+=====================
+rvWeaponRocketLauncher::UpdateBrimstoneBeam
+=====================
+*/
+void rvWeaponRocketLauncher::UpdateBrimstoneBeam(void) {
+	trace_t tr;
+
+	idVec3 start;
+	idVec3 end;
+	idVec3 direction;
+
+	start = playerViewOrigin;
+	direction = playerViewAxis[0];
+
+	end = start + direction * brimstoneRange;
+
+	gameLocal.TracePoint(
+		owner,
+		tr,
+		start,
+		end,
+		(MASK_SHOT_RENDERMODEL | CONTENTS_WATER | CONTENTS_PROJECTILE),
+		owner
+	);
+
+	brimstoneEndPoint = tr.endpos;
+
+	if (brimstoneTrailEffect) {
+		direction = brimstoneEndPoint - start;
+		direction.Normalize();
+
+		brimstoneTrailEffect->SetOrigin(start);
+		brimstoneTrailEffect->SetAxis(direction.ToMat3());
+		brimstoneTrailEffect->SetEndOrigin(brimstoneEndPoint);
+	}
+
+	if (gameLocal.time >= brimstoneNextDamageTime &&
+		brimstoneDamageTicks < 9) {
+
+		BrimstoneDamage();
+
+		brimstoneNextDamageTime = gameLocal.time + 100;
+	}
+}
+
+/*
+=====================
+rvWeaponRocketLauncher::BrimstoneDamage
+=====================
+*/
+void rvWeaponRocketLauncher::BrimstoneDamage(void) {
+	trace_t tr;
+
+	idVec3 start;
+	idVec3 end;
+	idVec3 direction;
+
+	start = playerViewOrigin;
+	direction = playerViewAxis[0];
+
+	end = start + direction * brimstoneRange;
+
+	gameLocal.TracePoint(
+		owner,
+		tr,
+		start,
+		end,
+		(MASK_SHOT_RENDERMODEL | CONTENTS_WATER | CONTENTS_PROJECTILE),
+		owner
+	);
+
+	if (tr.fraction < 1.0f && tr.c.entityNum != ENTITYNUM_WORLD) {
+		idEntity* ent = gameLocal.entities[tr.c.entityNum];
+
+		if (ent && ent->fl.takedamage) {
+			ent->Damage(
+				owner,
+				owner,
+				direction,
+				"damage_brimstone",
+				1.0f,
+				0
+			);
+		}
+	}
+
+	brimstoneDamageTicks++;
+}
+
+/*
+=====================
+rvWeaponRocketLauncher::StopBrimstoneBeam
+=====================
+*/
+void rvWeaponRocketLauncher::StopBrimstoneBeam(void) {
+	brimstoneFiring = false;
+	brimstoneDamageTicks = 0;
+
+	if (brimstoneTrailEffect) {
+		brimstoneTrailEffect->Stop();
+		brimstoneTrailEffect->PostEventMS(&EV_Remove, 1000);
+		brimstoneTrailEffect = NULL;
+	}
+}
