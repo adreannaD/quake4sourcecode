@@ -51,6 +51,11 @@ protected:
 
 	void					UpdateTubes	( void );
 
+	//chocolate milk
+	bool chocolateMilkCharging;
+	int chocolateMilkChargeStartTime;
+	float chocolateMilkCharge;
+
 	// Tube effects
 	rvClientEntityPtr<rvClientEffect>	tubeEffects[LIGHTNINGGUN_NUM_TUBES];
 	idInterpolate<float>				tubeOffsets[LIGHTNINGGUN_NUM_TUBES];
@@ -136,6 +141,11 @@ void rvWeaponLightningGun::Spawn( void ) {
 	
 	trailEffectView = NULL;
 	nextCrawlTime	= 0;
+
+	//chocolate milk
+	chocolateMilkCharging = false;
+	chocolateMilkChargeStartTime = 0;
+	chocolateMilkCharge = 0.0f;
 
 	chainLightning.Clear( );
 	
@@ -261,6 +271,23 @@ void rvWeaponLightningGun::Think ( void ) {
 
 	UpdateTubes();
 
+	//chocolate milk
+	if (wsfl.attack && !chocolateMilkCharging) {
+		chocolateMilkCharging = true;
+		chocolateMilkChargeStartTime = gameLocal.time;
+		chocolateMilkCharge = 0.0f;
+	}
+
+	if (chocolateMilkCharging) {
+		int chargeTime = gameLocal.time - chocolateMilkChargeStartTime;
+
+		chocolateMilkCharge = chargeTime / 2000.0f;
+
+		if (chocolateMilkCharge > 1.0f) {
+			chocolateMilkCharge = 1.0f;
+		}
+	}
+
 	// If no longer firing or out of ammo then nothing to do in the think
 	if ( !wsfl.attack || !IsReady() || !AmmoAvailable() ) {
 		if ( trailEffectView ) {
@@ -273,6 +300,7 @@ void rvWeaponLightningGun::Think ( void ) {
 		return;
 	}
 
+	/*
 	// Cast a ray out to the lock range
 // RAVEN BEGIN
 // ddynerman: multiple clip worlds
@@ -304,7 +332,9 @@ void rvWeaponLightningGun::Think ( void ) {
 	UpdateEffects( origin );
 	
 	MuzzleFlash();
+	*/
 
+	/*
 	// Inflict damage on all targets being attacked
 	if ( !gameLocal.isClient && gameLocal.time >= nextAttackTime ) {
 		int    i;
@@ -324,6 +354,7 @@ void rvWeaponLightningGun::Think ( void ) {
 
 		statManager->WeaponFired( owner, owner->GetCurrentWeapon(), chainLightning.Num() + 1 );
 	}
+	*/
 
 	// Play the lightning crawl effect every so often when doing damage
 	if ( gameLocal.time > nextCrawlTime ) {
@@ -834,8 +865,29 @@ stateResult_t rvWeaponLightningGun::State_Fire( const stateParms_t& parms ) {
 			return SRESULT_STAGE( STAGE_ATTACKLOOP );
 		
 		case STAGE_ATTACKLOOP:
-			if ( !wsfl.attack || wsfl.lowerWeapon || !AmmoAvailable ( ) ) {
-				return SRESULT_STAGE ( STAGE_DONE );
+			if (!wsfl.attack || wsfl.lowerWeapon || !AmmoAvailable()) {
+
+				//chocolate milk
+				if (chocolateMilkCharging && !gameLocal.isClient) {
+					float power;
+
+					// Minimum charge = 1/3 damage
+					// Full charge = 4x damage
+					power = 0.333f + (chocolateMilkCharge * 3.667f);
+
+					// Fire the charged tear on release
+					rvWeapon::Attack(false, 1, spread, 0, power);
+
+					// Reset charge
+					chocolateMilkCharging = false;
+					chocolateMilkCharge = 0.0f;
+
+					// Chocolate Milk has 2.5x the normal tear delay
+					nextAttackTime = gameLocal.time +
+						(fireRate * 2.5f * owner->PowerUpModifier(PMOD_FIRERATE));
+				}
+
+				return SRESULT_STAGE(STAGE_DONE);
 			}
 			if ( AnimDone( ANIMCHANNEL_ALL, 0 ) ) {
 				PlayCycle( ANIMCHANNEL_ALL, "shoot_loop", 0 );
