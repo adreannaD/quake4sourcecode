@@ -280,9 +280,23 @@ public:
  		EVENT_MAXEVENTS
  	};
 
+	//isaac weapon mod
+	enum IsaacWeaponMod {
+		WEAPONMOD_NONE = 0,
+		WEAPONMOD_HOMING,
+		WEAPONMOD_PIERCING,
+		WEAPONMOD_EXPLOSIVE,
+		WEAPONMOD_BURNING,
+		WEAPONMOD_LIFESTEAL
+	};
+
 	friend class idThread;
 
 	usercmd_t				usercmd;
+
+	//isaac weapon mod
+	int weaponMod;
+	int weaponModSeed;
 
 	class idPlayerView		playerView;			// handles damage kicks and effects
 
@@ -565,6 +579,14 @@ public:
 	bool					GiveWeaponMods				( int mods );
 	bool					GiveWeaponMods				( int weapon, int mods );
 	void					GiveWeaponMod				( const char* weaponmod );
+
+	//isaac weapon mods
+	void SetIsaacWeaponMod(int mod);
+	void GiveRandomIsaacWeaponMod(void);
+	int GetIsaacWeaponMod(void) const;
+
+	//isaac weapon mod: lifesteal
+	void IsaacLifesteal(void);
 
 	int						SlotForWeapon				( const char *weaponName );
 
