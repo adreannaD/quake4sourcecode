@@ -520,6 +520,124 @@ void idProjectile::Think( void ) {
 	// run physics
 	if ( thinkFlags & TH_PHYSICS ) {
 
+		//isaac weapon mod test
+		if (owner.GetEntity() &&
+			owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+
+			int mod = static_cast<idPlayer*>(owner.GetEntity())->GetIsaacWeaponMod();
+
+			switch (mod) {
+			case idPlayer::WEAPONMOD_HOMING:
+			{
+				idAI* closestEnemy = NULL;
+				float closestDistance = 500.0f;
+
+				idVec3 projectileOrigin = physicsObj.GetOrigin();
+
+				for (int i = 0; i < MAX_GENTITIES; i++) {
+					idEntity* ent = gameLocal.entities[i];
+
+					if (!ent || !ent->IsType(idAI::GetClassType())) {
+						continue;
+					}
+
+					idAI* enemy = static_cast<idAI*>(ent);
+
+					if (enemy->health <= 0 || enemy->IsHidden()) {
+						continue;
+					}
+
+					float distance = (enemy->GetPhysics()->GetOrigin() - projectileOrigin).Length();
+
+					if (distance < closestDistance) {
+						closestDistance = distance;
+						closestEnemy = enemy;
+					}
+				}
+
+				if (closestEnemy) {
+					idVec3 direction = closestEnemy->GetPhysics()->GetOrigin() - projectileOrigin;
+					direction.Normalize();
+
+					float currentSpeed = physicsObj.GetLinearVelocity().Length();
+
+					physicsObj.SetLinearVelocity(direction * currentSpeed);
+					physicsObj.SetAxis(direction.ToMat3());
+				}
+
+				break;
+			}
+
+			case idPlayer::WEAPONMOD_PIERCING:
+			{
+				physicsObj.SetClipMask(MASK_DMGSOLID);
+
+				trace_t tr;
+				idVec3 start;
+				idVec3 end;
+				idVec3 direction;
+
+				start = physicsObj.GetOrigin();
+				direction = physicsObj.GetLinearVelocity();
+
+				if (direction.LengthSqr() > 0.0f) {
+					direction.Normalize();
+				}
+
+				end = start + direction * 20.0f;
+
+				gameLocal.TracePoint(
+					owner,
+					tr,
+					start,
+					end,
+					MASK_SHOT_RENDERMODEL,
+					owner
+				);
+
+				if (tr.fraction < 1.0f && tr.c.entityNum != ENTITYNUM_WORLD) {
+					idEntity* ent = gameLocal.entities[tr.c.entityNum];
+
+					if (ent && ent->fl.takedamage) {
+						const char* piercingDamageDef = spawnArgs.GetString("def_damage");
+
+						if (piercingDamageDef && piercingDamageDef[0] != '\0') {
+							ent->Damage(
+								this,
+								owner,
+								direction,
+								piercingDamageDef,
+								1.0f,
+								0
+							);
+						}
+					}
+				}
+
+				break;
+			}
+
+			case idPlayer::WEAPONMOD_EXPLOSIVE:
+				projectileFlags.detonate_on_actor = true;
+				projectileFlags.detonate_on_world = true;
+				spawnArgs.Set("def_splash_damage", "damage_scatterbombSplash");
+				gameLocal.Printf("EXPLOSIVE MOD ACTIVE\n");
+				break;
+
+			case idPlayer::WEAPONMOD_BURNING:
+				gameLocal.Printf("Isaac projectile detected: Burning\n");
+				break;
+
+			case idPlayer::WEAPONMOD_LIFESTEAL:
+				gameLocal.Printf("Isaac projectile detected: Lifesteal\n");
+				break;
+
+			default:
+				gameLocal.Printf("Isaac projectile detected: None\n");
+				break;
+			}
+		}
+
 		// Update the velocity to match the changing speed
 		if ( updateVelocity ) {
 			idVec3 vel;
@@ -893,6 +1011,26 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 // RAVEN END
  			ent->Damage( this, owner, dir, damageDefName, damagePower, hitJoint );
 
+			//isaac weapon mod: lifesteal
+			if (owner.GetEntity() &&
+				owner.GetEntity()->IsType(idPlayer::GetClassType()) &&
+				ent->IsType(idActor::GetClassType()) &&
+				static_cast<idPlayer*>(owner.GetEntity())->GetIsaacWeaponMod() == idPlayer::WEAPONMOD_LIFESTEAL) {
+
+				idPlayer* player = static_cast<idPlayer*>(owner.GetEntity());
+				player->IsaacLifesteal();
+			}
+
+			//isaac weapon mod: burning
+			if (owner.GetEntity() &&
+				owner.GetEntity()->IsType(idPlayer::GetClassType()) &&
+				ent->IsType(idActor::GetClassType()) &&
+				static_cast<idPlayer*>(owner.GetEntity())->GetIsaacWeaponMod() == idPlayer::WEAPONMOD_BURNING) {
+
+				idActor* hitActor = static_cast<idActor*>(ent);
+				hitActor->ApplyBurn(3000);
+			}
+
 			//poison tears
 			if (!idStr::Icmp(damageDefName, "damage_nailDirect") &&
 				ent->IsType(idActor::GetClassType())) {
@@ -947,7 +1085,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 		return true;
 	}
 
-	Explode( &collision, false, ignore );
+	gameLocal.Printf("PROJECTILE COLLIDE -> EXPLODE\n");
+	Explode( &collision, true, ignore );
 
 	return true;
 }
@@ -1350,7 +1489,26 @@ void idProjectile::PlayDetonateEffect( const idVec3& origin, const idMat3& axis 
 		return;
 	}
 
-	gameLocal.PlayEffect( spawnArgs, "fx_detonate", origin, axis, false, vec3_origin, true );
+	// Isaac weapon mod: explosive
+	if (owner.GetEntity() &&
+		owner.GetEntity()->IsType(idPlayer::GetClassType()) &&
+		static_cast<idPlayer*>(owner.GetEntity())->GetIsaacWeaponMod() == idPlayer::WEAPONMOD_EXPLOSIVE) {
+
+		idDict explosiveEffectArgs;
+		explosiveEffectArgs.Set("fx_detonate", "effects/weapons/grenadelauncher/detonate.fx");
+
+		gameLocal.PlayEffect(
+			gameLocal.GetEffect(explosiveEffectArgs, "fx_detonate"),
+			origin,
+			axis,
+			false,
+			vec3_origin,
+			true
+		);
+	}
+	else {
+		gameLocal.PlayEffect(gameLocal.GetEffect(spawnArgs, "fx_detonate"), origin, axis, false, vec3_origin, true);
+	}
 }
 
 /*

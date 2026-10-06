@@ -345,6 +345,9 @@ const idEventDef EV_DamageOverTimeEffect ( "damageOverTimeEffect","dds" );
 //poison tears
 const idEventDef EV_PoisonTick("poisonTick");
 
+//isaac weapon mod: burning
+const idEventDef EV_BurnTick("burnTick");
+
 // MCG: script-callable joint crawl effect
 const idEventDef EV_JointCrawlEffect ( "jointCrawlEffect","sf" );
 
@@ -402,6 +405,9 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	//poison tears
 	EVENT( EV_PoisonTick, idActor::Event_PoisonTick )
 
+	//isaac weapon mod: burning
+	EVENT( EV_BurnTick, idActor::Event_BurnTick )
+
 // MCG: script-callable joint crawl effect
 	EVENT( EV_JointCrawlEffect,			idActor::Event_JointCrawlEffect )
 // RAVEN END
@@ -449,6 +455,10 @@ idActor::idActor( void )
 	//poison tears
 	poisoned = false;
 	poisonEndTime = 0;
+
+	//isaac weapon mod: burning
+	burning = false;
+	burnEndTime = 0;
 
 	inDamageEvent		= false;
 // RAVEN BEGIN
@@ -1504,6 +1514,25 @@ void idActor::Event_PoisonTick(void) {
 	}
 }
 
+//isaac weapon mod: burning
+void idActor::Event_BurnTick(void) {
+	if (!burning) {
+		return;
+	}
+
+	gameLocal.Printf("BURN TICK: %s\n", GetName());
+
+	health -= 5;
+
+	if (gameLocal.GetTime() < burnEndTime) {
+		PostEventMS(&EV_BurnTick, 1000);
+	}
+	else {
+		burning = false;
+		gameLocal.Printf("BURN ENDED: %s\n", GetName());
+	}
+}
+
 /*
 =====================
 idActor::FlashlightUpdate
@@ -2403,6 +2432,19 @@ void idActor::ApplyPoison(int duration) {
 	PostEventMS(&EV_PoisonTick, 1000);
 
 	gameLocal.Printf("POISON APPLIED: %s\n", GetName());
+}
+
+//isaac weapon mod: burning
+void idActor::ApplyBurn(int duration) {
+	if (burning) {
+		return;
+	}
+
+	burning = true;
+	burnEndTime = gameLocal.GetTime() + duration;
+	PostEventMS(&EV_BurnTick, 1000);
+
+	gameLocal.Printf("BURN APPLIED: %s\n", GetName());
 }
 
 /*

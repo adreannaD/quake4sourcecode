@@ -1104,6 +1104,10 @@ idPlayer::idPlayer() {
 
 	weapon					= NULL;
 
+	//isaac weapon mod
+	weaponMod = 0;
+	weaponModSeed = 0;
+
 	hud						= NULL;
 	mphud					= NULL;
 	objectiveSystem			= NULL;
@@ -1808,6 +1812,13 @@ Prepare any resources used by the player.
 void idPlayer::Spawn( void ) {
 	idStr		temp;
 	idBounds	bounds;
+
+	//temp test: give player a random Isaac weapon mod
+	//GiveRandomIsaacWeaponMod();
+	//gameLocal.Printf("Isaac Weapon Mod selected: %d\n", weaponMod);
+
+	//temp weapon mod test
+	//SetIsaacWeaponMod(WEAPONMOD_LIFESTEAL);
 
 	if ( entityNumber >= MAX_CLIENTS ) {
 		gameLocal.Error( "entityNum > MAX_CLIENTS for player.  Player may only be spawned with a client." );
@@ -5131,6 +5142,30 @@ void idPlayer::GiveWeaponMod ( const char* weaponmod ) {
 			return;
 		}
 	}
+}
+
+//isaac weapon mods
+void idPlayer::SetIsaacWeaponMod(int mod) {
+	weaponMod = mod;
+}
+
+void idPlayer::GiveRandomIsaacWeaponMod(void) {
+	weaponModSeed = gameLocal.time;
+	gameLocal.Printf("Isaac Weapon Mod Seed: %d\n", weaponModSeed);
+
+	weaponMod = 1 + (weaponModSeed % 5);
+	gameLocal.Printf("Isaac Weapon Mod selected: %d\n", weaponMod);
+}
+
+int idPlayer::GetIsaacWeaponMod(void) const {
+	return weaponMod;
+}
+
+//isaac weapon mod: lifesteal
+void idPlayer::IsaacLifesteal(void) {
+	health += 2;
+
+	gameLocal.Printf("LIFESTEAL: Player healed for 2\n");
 }
 
 /*
@@ -9284,6 +9319,13 @@ Called every tic for each player
 */
 void idPlayer::Think( void ) {
 	renderEntity_t *headRenderEnt;
+	/*
+	//isaac weapon mod test
+	if (weaponMod == WEAPONMOD_NONE) {
+		GiveRandomIsaacWeaponMod();
+		gameLocal.Printf("Isaac Weapon Mod selected: %d\n", weaponMod);
+	}
+	*/
  
 	if ( talkingNPC ) {
 		if ( !talkingNPC.IsValid() ) {

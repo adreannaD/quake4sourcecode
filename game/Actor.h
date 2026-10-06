@@ -183,6 +183,9 @@ public:
 	//poison tears
 	void ApplyPoison(int duration);
 
+	//isaac weapon mod: burning
+	void ApplyBurn(int duration);
+
 	virtual	void			Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, const char *damageDefName, const float damageScale, const int location );
 // RAVEN BEGIN
 // nmckenzie: a final hook in the middle of the damage function
@@ -319,6 +322,10 @@ protected:
 	bool poisoned;
 	int poisonEndTime;
 
+	//isaac weapon mod: burning
+	bool burning;
+	int burnEndTime;
+
 	int						painTime;
 
 	idList<idAttachInfo>	attachments;
@@ -407,6 +414,9 @@ private:
 	
 	//poison tears
 	void					Event_PoisonTick(void);
+
+	//isaac weapon mod: burning
+	void Event_BurnTick(void);
 	
 	void					Event_JointCrawlEffect ( const char *effectKeyName, float crawlSecs );
 
