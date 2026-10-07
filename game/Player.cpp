@@ -1108,6 +1108,13 @@ idPlayer::idPlayer() {
 	weaponMod = 0;
 	weaponModSeed = 0;
 
+	//isaac attributes
+	damageMultiplier = 1.0f;
+	fireRateMultiplier = 1.0f;
+	speedMultiplier = 1.0f;
+	maxHealthBonus = 0;
+	projectileSpeedMultiplier = 1.0f;
+
 	hud						= NULL;
 	mphud					= NULL;
 	objectiveSystem			= NULL;
@@ -1819,6 +1826,10 @@ void idPlayer::Spawn( void ) {
 
 	//temp weapon mod test
 	//SetIsaacWeaponMod(WEAPONMOD_LIFESTEAL);
+
+	//temp attribute test
+	//UpgradeProjectileSpeed();
+	//gameLocal.Printf("PROJECTILE SPEED MULTIPLIER: %.1f\n", projectileSpeedMultiplier);
 
 	if ( entityNumber >= MAX_CLIENTS ) {
 		gameLocal.Error( "entityNum > MAX_CLIENTS for player.  Player may only be spawned with a client." );
@@ -4292,6 +4303,15 @@ idPlayer::PowerUpModifier
 float idPlayer::PowerUpModifier( int type ) {
 	float mod = 1.0f;
 
+	//isaac attributes
+	if (type == PMOD_FIRERATE) {
+		mod *= fireRateMultiplier;
+	}
+
+	if (type == PMOD_SPEED) {
+		mod *= speedMultiplier;
+	}
+
 	if ( PowerUpActive( POWERUP_QUADDAMAGE ) ) {
 		switch( type ) {
 			case PMOD_PROJECTILE_DAMAGE: {
@@ -5166,6 +5186,29 @@ void idPlayer::IsaacLifesteal(void) {
 	health += 2;
 
 	gameLocal.Printf("LIFESTEAL: Player healed for 2\n");
+}
+
+//isaac attributes
+void idPlayer::UpgradeDamage(void) {
+	damageMultiplier += 0.1f;
+}
+
+void idPlayer::UpgradeFireRate(void) {
+	fireRateMultiplier -= 0.1f;
+}
+
+void idPlayer::UpgradeSpeed(void) {
+	speedMultiplier += 0.1f;
+}
+
+void idPlayer::UpgradeMaxHealth(void) {
+	maxHealthBonus += 10;
+	inventory.maxHealth += 10;
+	health += 10;
+}
+
+void idPlayer::UpgradeProjectileSpeed(void) {
+	projectileSpeedMultiplier += 0.1f;
 }
 
 /*

@@ -218,6 +218,12 @@ idProjectile::SetSpeed
 ================
 */
 void idProjectile::SetSpeed( float s, int accelTime ) {
+	//isaac attribute: projectile speed
+	if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+		idPlayer* player = static_cast<idPlayer*>(owner.GetEntity());
+		s *= player->projectileSpeedMultiplier;
+	}
+
 	idVec3 vel;
 	vel = physicsObj.GetLinearVelocity();
 	vel.Normalize();
@@ -1009,7 +1015,18 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 				}
 			}	
 // RAVEN END
- 			ent->Damage( this, owner, dir, damageDefName, damagePower, hitJoint );
+			//isaac attribute: damage multiplier
+			float modifiedDamagePower = damagePower;
+
+			if (owner.GetEntity() && owner.GetEntity()->IsType(idPlayer::GetClassType())) {
+				idPlayer* player = static_cast<idPlayer*>(owner.GetEntity());
+				modifiedDamagePower *= player->damageMultiplier;
+			}
+
+			//temp attribute test
+			//gameLocal.Printf("DAMAGE: %.2f -> %.2f\n", damagePower, modifiedDamagePower);
+
+ 			ent->Damage( this, owner, dir, damageDefName, modifiedDamagePower, hitJoint );
 
 			//isaac weapon mod: lifesteal
 			if (owner.GetEntity() &&

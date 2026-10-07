@@ -298,6 +298,13 @@ public:
 	int weaponMod;
 	int weaponModSeed;
 
+	//isaac attributes
+	float damageMultiplier;
+	float fireRateMultiplier;
+	float speedMultiplier;
+	float maxHealthBonus;
+	float projectileSpeedMultiplier;
+
 	class idPlayerView		playerView;			// handles damage kicks and effects
 
 	bool					alreadyDidTeamAnnouncerSound;
@@ -587,6 +594,13 @@ public:
 
 	//isaac weapon mod: lifesteal
 	void IsaacLifesteal(void);
+
+	//isaac attributes
+	void UpgradeDamage(void);
+	void UpgradeFireRate(void);
+	void UpgradeSpeed(void);
+	void UpgradeMaxHealth(void);
+	void UpgradeProjectileSpeed(void);
 
 	int						SlotForWeapon				( const char *weaponName );
 
