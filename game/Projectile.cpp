@@ -1263,6 +1263,56 @@ void idProjectile::Explode( const trace_t *collision, const bool showExplodeFX, 
 		}
 	}
 
+	// Scatter Bombs
+	if (!idStr::Icmp(spawnArgs.GetString("def_damage"), "damage_grenadeDirect")) {
+		const char* bombDef = "projectile_scatterbomb";
+		const int count = gameLocal.random.RandomInt(3) + 2;
+
+		idVec3 burstOrigin = endpos + normal * 10.0f;
+		idVec3 forward = physicsObj.GetLinearVelocity();
+
+		if (forward.LengthSqr() > 0.0f) {
+			forward.Normalize();
+		}
+		else {
+			forward = normal;
+		}
+
+		idVec3 right = forward.ToMat3()[1];
+		idVec3 up = forward.ToMat3()[2];
+
+		for (int i = 0; i < count; i++) {
+			float angle = (360.0f / count) * i;
+			float spread = 0.35f;
+
+			idVec3 direction =
+				forward +
+				right * idMath::Cos(DEG2RAD(angle)) * spread +
+				up * idMath::Sin(DEG2RAD(angle)) * spread;
+
+			direction.Normalize();
+
+			idProjectile* bomb = static_cast<idProjectile*>(
+				gameLocal.SpawnEntityDef(bombDef)
+				);
+
+			if (bomb) {
+				bomb->Create(
+					owner,
+					burstOrigin,
+					direction,
+					this
+				);
+
+				bomb->Launch(
+					burstOrigin,
+					direction,
+					direction
+				);
+			}
+		}
+	}
+
 	// Residual damage (damage over time)
 	delay = SEC2MS ( spawnArgs.GetFloat ( "delay_residual" ) );
 	if ( delay > 0.0f ) {
