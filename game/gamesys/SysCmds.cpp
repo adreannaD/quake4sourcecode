@@ -1160,6 +1160,93 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 
 // RAVEN BEGIN
 // ddynerman: MP spawning command for performance testing
+
+
+/*
+===================
+Cmd_SpawnLevel_f
+===================
+*/
+void Cmd_SpawnLevel_f(const idCmdArgs& args) {
+	idPlayer* player = gameLocal.GetLocalPlayer();
+
+	if (!player || !gameLocal.CheatsOk(false)) {
+		return;
+	}
+
+	if (args.Argc() != 2) {
+		gameLocal.Printf("usage: spawnLevel <count>\n");
+		return;
+	}
+
+	int requestedCount = atoi(args.Argv(1));
+
+	if (requestedCount < 1) {
+		gameLocal.Printf("spawnLevel: count must be at least 1\n");
+		return;
+	}
+
+	if (requestedCount > 10) {
+		requestedCount = 10;
+	}
+
+
+	static const char* enemyTypes[] = {
+		"monster_grunt",
+		"monster_berserker",
+		"monster_gunner",
+		"monster_gladiator"
+	};
+
+	const int enemyTypeCount = sizeof(enemyTypes) / sizeof(enemyTypes[0]);
+	const float spawnRadius = 240.0f;
+	const float angleStep = 360.0f / requestedCount;
+	const float playerYaw = player->viewAngles.yaw;
+	const idVec3 playerOrigin = player->GetPhysics()->GetOrigin();
+
+	int spawnedCount = 0;
+
+	for (int i = 0; i < requestedCount; i++) {
+		const int typeIndex = gameLocal.random.RandomInt(enemyTypeCount);
+		const float yaw = playerYaw + i * angleStep;
+		const idVec3 direction = idAngles(0.0f, yaw, 0.0f).ToForward();
+
+		// Spread enemies around the player, with slight random variation.
+		const float radius = spawnRadius + gameLocal.random.CRandomFloat() * 40.0f;
+		idVec3 origin = playerOrigin + direction * radius;
+		origin.z += 1.0f;
+
+		idDict dict;
+		dict.Set("classname", enemyTypes[typeIndex]);
+		dict.Set("angle", va("%f", yaw + 180.0f));
+		dict.Set("origin", origin.ToString());
+
+		idEntity* newEnt = NULL;
+		gameLocal.SpawnEntityDef(dict, &newEnt);
+
+		if (newEnt) {
+			spawnedCount++;
+			gameLocal.Printf(
+				"spawnLevel: spawned '%s' at %s\n",
+				enemyTypes[typeIndex],
+				origin.ToString()
+			);
+		}
+		else {
+			gameLocal.Printf(
+				"spawnLevel: failed to spawn '%s'\n",
+				enemyTypes[typeIndex]
+			);
+		}
+	}
+
+	gameLocal.Printf(
+		"spawnLevel: spawned %d of %d requested enemies\n",
+		spawnedCount,
+		requestedCount
+	);
+}
+
 /*
 ===================
 Cmd_EvaluateMPPerformance_f
@@ -3078,6 +3165,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "teleport",				Cmd_Teleport_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleports the player to an entity location", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "trigger",				Cmd_Trigger_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"triggers an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "spawn",					Cmd_Spawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
+	cmdSystem->AddCommand("spawnLevel", Cmd_SpawnLevel_f, CMD_FL_GAME | CMD_FL_CHEAT, "spawns a group of random enemies");
 	cmdSystem->AddCommand( "damage",				Cmd_Damage_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"apply damage to an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "remove",				Cmd_Remove_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"removes an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "killMonsters",			Cmd_KillMonsters_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"removes all monsters" );
