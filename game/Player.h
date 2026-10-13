@@ -366,6 +366,7 @@ public:
 	idUserInterface *		cinematicHud;
 
 	idUserInterface* rewardMenu;
+	idUserInterface* isaacStatsHud;
 	bool rewardMenuOpen;
 	int rewardChoices[3];
 

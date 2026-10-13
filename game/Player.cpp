@@ -1869,6 +1869,7 @@ void idPlayer::Spawn( void ) {
 		objectiveSystem = NULL;
 
 		rewardMenu = NULL;
+		isaacStatsHud = NULL;
 		rewardMenuOpen = false;
 
 		for (int i = 0; i < 3; i++) {
@@ -1923,6 +1924,14 @@ void idPlayer::Spawn( void ) {
 
 		if (rewardMenu) {
 			rewardMenu->Activate(false, gameLocal.time);
+		}
+
+		isaacStatsHud = uiManager->FindGui(
+			"guis/isaacstats.gui", true, false, true
+		);
+
+		if (isaacStatsHud) {
+			isaacStatsHud->Activate(true, gameLocal.time);
 		}
 
 		// clear votes
@@ -3780,6 +3789,56 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 
 		UpdateHudStats( _hud );
 
+		// Update the Binding of Isaac stats HUD.
+		if (isaacStatsHud && gameLocal.GetLocalPlayer() == this) {
+			isaacStatsHud->SetStateString(
+				"damage",
+				va("Damage: %.1f (+%d)", damageMultiplier,
+					(int)((damageMultiplier - 1.0f) / 0.1f + 0.5f))
+			);
+
+			isaacStatsHud->SetStateString(
+				"firerate",
+				va("Fire Rate: %.0f%% (+%d)",
+					100.0f / fireRateMultiplier,
+					(int)((1.0f - fireRateMultiplier) / 0.1f + 0.5f))
+			);
+
+			isaacStatsHud->SetStateString(
+				"speed",
+				va("Movement: %.1f (+%d)", speedMultiplier,
+					(int)((speedMultiplier - 1.0f) / 0.1f + 0.5f))
+			);
+
+			isaacStatsHud->SetStateString(
+				"health",
+				va("Health: %d / %d (+%d)", health, inventory.maxHealth,
+					(int)maxHealthBonus / 10)
+			);
+
+			isaacStatsHud->SetStateString(
+				"projectile",
+				va("Projectile: %.1f (+%d)", projectileSpeedMultiplier,
+					(int)((projectileSpeedMultiplier - 1.0f) / 0.1f + 0.5f))
+			);
+
+			const char* modName = "None";
+			switch (weaponMod) {
+			case WEAPONMOD_HOMING:    modName = "Homing"; break;
+			case WEAPONMOD_PIERCING:  modName = "Piercing"; break;
+			case WEAPONMOD_EXPLOSIVE: modName = "Explosive"; break;
+			case WEAPONMOD_BURNING:   modName = "Burning"; break;
+			case WEAPONMOD_LIFESTEAL: modName = "Lifesteal"; break;
+			}
+
+			isaacStatsHud->SetStateString(
+				"weaponmod",
+				va("Weapon Mod: %s", modName)
+			);
+
+			isaacStatsHud->StateChanged(gameLocal.time);
+		}
+
 		if ( focusBrackets ) {
 			// If 2d_calc is still true then the gui didnt render so we can abandon it
 			if ( focusBrackets->State().GetBool( "2d_calc" ) ) {
@@ -3795,7 +3854,11 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 				// TODO: Find a way to get bracket text from gui to hud
 			}
 		}		
-	 	_hud->Redraw( gameLocal.realClientTime );
+		_hud->Redraw(gameLocal.realClientTime);
+
+		if (isaacStatsHud && gameLocal.GetLocalPlayer() == this) {
+			isaacStatsHud->Redraw(gameLocal.realClientTime);
+		}
 	}
 
 	if ( gameLocal.isMultiplayer ) {

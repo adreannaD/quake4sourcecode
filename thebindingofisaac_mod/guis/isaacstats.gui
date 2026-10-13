@@ -1,0 +1,88 @@
+
+windowDef Desktop
+{
+    rect        0, 0, 640, 480
+    visible     1
+    menugui     1
+    backcolor   0, 0, 0, 0
+
+    windowDef Panel
+    {
+        rect        12, 12, 205, 170
+        visible     1
+        backcolor   0.02, 0.02, 0.02, 0.78
+        forecolor   1, 1, 1, 1
+        bordersize  1
+        bordercolor 0.8, 0.65, 0.2, 0.9
+    }
+
+    windowDef Title
+    {
+        rect        22, 18, 185, 22
+        visible     1
+        text        "ISAAC STATUS"
+        textscale   0.35
+        forecolor   1, 0.8, 0.25, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef Damage
+    {
+        rect        22, 45, 185, 18
+        visible     1
+        text        "gui::damage"
+        textscale   0.25
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef FireRate
+    {
+        rect        22, 65, 185, 18
+        visible     1
+        text        "gui::firerate"
+        textscale   0.25
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef Speed
+    {
+        rect        22, 85, 185, 18
+        visible     1
+        text        "gui::speed"
+        textscale   0.25
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef Health
+    {
+        rect        22, 105, 185, 18
+        visible     1
+        text        "gui::health"
+        textscale   0.25
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef ProjectileSpeed
+    {
+        rect        22, 125, 185, 18
+        visible     1
+        text        "gui::projectile"
+        textscale   0.25
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef WeaponMod
+    {
+        rect        22, 145, 185, 22
+        visible     1
+        text        "gui::weaponmod"
+        textscale   0.23
+        forecolor   0.5, 1, 0.6, 1
+        font        "fonts/lowpixel"
+    }
+}
