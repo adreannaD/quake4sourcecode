@@ -18,6 +18,9 @@ AI.cpp
 #include "../spawner.h"
 #include "AI_Tactical.h"
 
+// Defined in SysCmds.cpp; records kills from spawnLevel encounters.
+void NotifySpawnLevelEnemyKilled(idAI* enemy);
+
 const char* aiTalkMessageString [ ] = {
 	"None",
 	"primary",
@@ -1650,6 +1653,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	}
 
 	aifl.dead = true;
+	NotifySpawnLevelEnemyKilled(this);
 
 	// turn off my flashlight, if I had one
 	ProcessEvent( &AI_Flashlight, false );

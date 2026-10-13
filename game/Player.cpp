@@ -5171,7 +5171,7 @@ void idPlayer::SetIsaacWeaponMod(int mod) {
 
 void idPlayer::GiveRandomIsaacWeaponMod(void) {
 	weaponModSeed = gameLocal.time;
-	gameLocal.Printf("Isaac Weapon Mod Seed: %d\n", weaponModSeed);
+	//gameLocal.Printf("Isaac Weapon Mod Seed: %d\n", weaponModSeed);
 
 	weaponMod = 1 + (weaponModSeed % 5);
 	gameLocal.Printf("Isaac Weapon Mod selected: %d\n", weaponMod);

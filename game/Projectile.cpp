@@ -1102,7 +1102,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity, bo
 		return true;
 	}
 
-	gameLocal.Printf("PROJECTILE COLLIDE -> EXPLODE\n");
+	//gameLocal.Printf("PROJECTILE COLLIDE -> EXPLODE\n");
 	Explode( &collision, true, ignore );
 
 	return true;

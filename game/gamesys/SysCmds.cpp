@@ -31,6 +31,32 @@
 #include "NoGameTypeInfo.h"
 #endif
 
+// Tracks the enemies spawned by the most recent spawnLevel command.
+static idList< idEntityPtr<idAI> > spawnLevelEnemies;
+static bool spawnLevelEncounterCompleted = false;
+static int spawnLevelConfirmedKills = 0;
+
+// Called by idAI::Killed when a tracked spawnLevel enemy dies.
+void NotifySpawnLevelEnemyKilled(idAI* enemy) {
+	if (!enemy || !enemy->spawnArgs.GetBool("spawnLevelTracked")) {
+		return;
+	}
+
+	spawnLevelConfirmedKills++;
+
+	gameLocal.Printf(
+		"spawnLevel: confirmed kill (%d of %d)\n",
+		spawnLevelConfirmedKills,
+		spawnLevelEnemies.Num()
+	);
+
+	if (spawnLevelConfirmedKills >= spawnLevelEnemies.Num()
+		&& !spawnLevelEncounterCompleted) {
+		spawnLevelEncounterCompleted = true;
+		gameLocal.Printf("spawnLevel: ENCOUNTER COMPLETE!\n");
+	}
+}
+
 /*
 ==================
 Cmd_GetFloatArg
@@ -1162,6 +1188,7 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 // ddynerman: MP spawning command for performance testing
 
 
+
 /*
 ===================
 Cmd_SpawnLevel_f
@@ -1190,7 +1217,6 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 		requestedCount = 10;
 	}
 
-
 	static const char* enemyTypes[] = {
 		"monster_grunt",
 		"monster_berserker",
@@ -1203,6 +1229,10 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 	const float angleStep = 360.0f / requestedCount;
 	const float playerYaw = player->viewAngles.yaw;
 	const idVec3 playerOrigin = player->GetPhysics()->GetOrigin();
+
+	spawnLevelEnemies.Clear();
+	spawnLevelEncounterCompleted = false;
+	spawnLevelConfirmedKills = 0;
 
 	int spawnedCount = 0;
 
@@ -1218,14 +1248,19 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 
 		idDict dict;
 		dict.Set("classname", enemyTypes[typeIndex]);
+		dict.Set("spawnLevelTracked", "1");
 		dict.Set("angle", va("%f", yaw + 180.0f));
 		dict.Set("origin", origin.ToString());
 
 		idEntity* newEnt = NULL;
 		gameLocal.SpawnEntityDef(dict, &newEnt);
 
-		if (newEnt) {
+		if (newEnt && newEnt->IsType(idAI::GetClassType())) {
+			idAI* spawnedAI = static_cast<idAI*>(newEnt);
+
+			spawnLevelEnemies.Append(spawnedAI);
 			spawnedCount++;
+
 			gameLocal.Printf(
 				"spawnLevel: spawned '%s' at %s\n",
 				enemyTypes[typeIndex],
@@ -1234,7 +1269,7 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 		}
 		else {
 			gameLocal.Printf(
-				"spawnLevel: failed to spawn '%s'\n",
+				"spawnLevel: failed to spawn AI enemy '%s'\n",
 				enemyTypes[typeIndex]
 			);
 		}
@@ -1245,6 +1280,46 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 		spawnedCount,
 		requestedCount
 	);
+}
+
+
+/*
+===================
+Cmd_EncounterStatus_f
+===================
+*/
+void Cmd_EncounterStatus_f(const idCmdArgs& args) {
+	if (spawnLevelEnemies.Num() == 0) {
+		gameLocal.Printf(
+			"encounterStatus: no tracked enemies. Run spawnLevel <count> first.\n"
+		);
+		return;
+	}
+
+	const int totalCount = spawnLevelEnemies.Num();
+	const int deadCount = spawnLevelConfirmedKills;
+	int aliveCount = totalCount - deadCount;
+
+	if (aliveCount < 0) {
+		aliveCount = 0;
+	}
+
+	gameLocal.Printf(
+		"encounterStatus: %d alive, %d confirmed kills (of %d tracked)\n",
+		aliveCount,
+		deadCount,
+		totalCount
+	);
+
+	if (deadCount >= totalCount) {
+		if (!spawnLevelEncounterCompleted) {
+			spawnLevelEncounterCompleted = true;
+			gameLocal.Printf("encounterStatus: ENCOUNTER COMPLETE!\n");
+		}
+		else {
+			gameLocal.Printf("encounterStatus: encounter already completed.\n");
+		}
+	}
 }
 
 /*
@@ -3166,6 +3241,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "trigger",				Cmd_Trigger_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"triggers an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "spawn",					Cmd_Spawn_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"spawns a game entity", idCmdSystem::ArgCompletion_Decl<DECL_ENTITYDEF> );
 	cmdSystem->AddCommand("spawnLevel", Cmd_SpawnLevel_f, CMD_FL_GAME | CMD_FL_CHEAT, "spawns a group of random enemies");
+	cmdSystem->AddCommand("encounterStatus", Cmd_EncounterStatus_f, CMD_FL_GAME | CMD_FL_CHEAT, "shows random encounter progress");
 	cmdSystem->AddCommand( "damage",				Cmd_Damage_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"apply damage to an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "remove",				Cmd_Remove_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"removes an entity", idGameLocal::ArgCompletion_EntityName );
 	cmdSystem->AddCommand( "killMonsters",			Cmd_KillMonsters_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"removes all monsters" );
