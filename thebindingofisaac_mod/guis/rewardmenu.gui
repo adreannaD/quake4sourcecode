@@ -1,0 +1,86 @@
+windowDef Desktop
+{
+    rect        0, 0, 640, 480
+    menugui     1
+    visible     1
+    backcolor   0, 0, 0, 0.85
+
+    windowDef Title
+    {
+        rect        100, 70, 440, 50
+        visible     1
+        text        "ENCOUNTER COMPLETE"
+        textscale   0.65
+        textalign   1
+        forecolor   1, 0.8, 0.25, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef Subtitle
+    {
+        rect        100, 125, 440, 35
+        visible     1
+        text        "Choose one reward"
+        textscale   0.4
+        textalign   1
+        forecolor   1, 1, 1, 1
+        font        "fonts/lowpixel"
+    }
+
+    windowDef Reward1
+    {
+        rect        140, 190, 360, 55
+        visible     1
+        text        "gui::reward1"
+        textscale   0.4
+        textalign   1
+        forecolor   1, 1, 1, 1
+        backcolor   0.2, 0.2, 0.2, 0.95
+        bordersize  2
+        bordercolor 0.8, 0.65, 0.2, 1
+        font        "fonts/lowpixel"
+
+        onAction
+        {
+            set "cmd" "reward1";
+        }
+    }
+
+    windowDef Reward2
+    {
+        rect        140, 260, 360, 55
+        visible     1
+        text        "gui::reward2"
+        textscale   0.4
+        textalign   1
+        forecolor   1, 1, 1, 1
+        backcolor   0.2, 0.2, 0.2, 0.95
+        bordersize  2
+        bordercolor 0.8, 0.65, 0.2, 1
+        font        "fonts/lowpixel"
+
+        onAction
+        {
+            set "cmd" "reward2";
+        }
+    }
+
+    windowDef Reward3
+    {
+        rect        140, 330, 360, 55
+        visible     1
+        text        "gui::reward3"
+        textscale   0.4
+        textalign   1
+        forecolor   1, 1, 1, 1
+        backcolor   0.2, 0.2, 0.2, 0.95
+        bordersize  2
+        bordercolor 0.8, 0.65, 0.2, 1
+        font        "fonts/lowpixel"
+
+        onAction
+        {
+            set "cmd" "reward3";
+        }
+    }
+}

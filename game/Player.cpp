@@ -1868,6 +1868,13 @@ void idPlayer::Spawn( void ) {
 		
 		objectiveSystem = NULL;
 
+		rewardMenu = NULL;
+		rewardMenuOpen = false;
+
+		for (int i = 0; i < 3; i++) {
+			rewardChoices[i] = -1;
+		}
+
 		if ( spawnArgs.GetString( "hud", "", temp ) ) {
 			hud = uiManager->FindGui( temp, true, false, true );
 		} else {
@@ -1908,6 +1915,14 @@ void idPlayer::Spawn( void ) {
 #ifdef _XENON
 			g_ObjectiveSystemOpen = objectiveSystemOpen;
 #endif
+		}
+
+		rewardMenu = uiManager->FindGui(
+			"guis/rewardmenu.gui", true, false, true
+		);
+
+		if (rewardMenu) {
+			rewardMenu->Activate(false, gameLocal.time);
 		}
 
 		// clear votes
@@ -3670,6 +3685,12 @@ void idPlayer::DrawHUD( idUserInterface *_hud ) {
 		return;
 	}
 
+	// Draw the Isaac reward menu when an encounter is complete.
+	if (rewardMenuOpen && rewardMenu) {
+		rewardMenu->Redraw(gameLocal.time);
+		return;
+	}
+
 	if ( objectiveSystemOpen ) {
 		if ( !GuiActive() ) {
 			// showing weapon zoom gui when objectives are open because that's the way I'z told to make it werkz
@@ -5211,6 +5232,68 @@ void idPlayer::UpgradeProjectileSpeed(void) {
 	projectileSpeedMultiplier += 0.1f;
 }
 
+void idPlayer::OpenIsaacRewardMenu(void) {
+	if (!rewardMenu) {
+		return;
+	}
+
+	const char* rewardNames[10] = {
+		"Damage Up",
+		"Fire Rate Up",
+		"Speed Up",
+		"Max Health Up",
+		"Projectile Speed Up",
+		"Homing Tears",
+		"Piercing Tears",
+		"Explosive Tears",
+		"Burning Tears",
+		"Lifesteal Tears"
+	};
+
+	int availableRewards[10];
+	for (int i = 0; i < 10; i++) {
+		availableRewards[i] = i;
+	}
+
+	// Shuffle the reward pool so the three choices are distinct.
+	for (int i = 9; i > 0; i--) {
+		int j = gameLocal.random.RandomInt(i + 1);
+		int temp = availableRewards[i];
+		availableRewards[i] = availableRewards[j];
+		availableRewards[j] = temp;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		rewardChoices[i] = availableRewards[i];
+
+		rewardMenu->SetStateString(
+			va("reward%d", i + 1),
+			rewardNames[rewardChoices[i]]
+		);
+	}
+
+	rewardMenuOpen = true;
+	rewardMenu->Activate(true, gameLocal.time);
+	rewardMenu->StateChanged(gameLocal.time);
+}
+
+static const char* GetIsaacRewardName(int reward)
+{
+	switch (reward) {
+	case 0: return "Damage Up";
+	case 1: return "Fire Rate Up";
+	case 2: return "Speed Up";
+	case 3: return "Max Health Up";
+	case 4: return "Projectile Speed Up";
+	case 5: return "Homing Tears";
+	case 6: return "Piercing Tears";
+	case 7: return "Explosive Tears";
+	case 8: return "Burning Tears";
+	case 9: return "Lifesteal Tears";
+	default: return "Unknown Reward";
+	}
+}
+
 /*
 ===============
 idPlayer::GiveInventoryItem
@@ -6108,9 +6191,13 @@ void idPlayer::DropWeapon( void ) {
 idPlayer::ActiveGui
 ===============
 */
-idUserInterface *idPlayer::ActiveGui( void ) {
+idUserInterface* idPlayer::ActiveGui(void) {
+	if (rewardMenuOpen && rewardMenu) {
+		return rewardMenu;
+	}
+
 #ifdef _XENON
-	if ( objectiveSystemOpen ) {
+	if (objectiveSystemOpen) {
 		return 0;
 	}
 #endif
@@ -6326,6 +6413,28 @@ idPlayer::Weapon_GUI
 void idPlayer::Weapon_GUI( void ) {
 
 	flagCanFire = false;
+
+	// Handle input for the Isaac reward menu.
+	if (rewardMenuOpen && rewardMenu) {
+		if ((oldButtons ^ usercmd.buttons) & BUTTON_ATTACK) {
+			sysEvent_t ev;
+			bool updateVisuals = false;
+
+			ev = sys->GenerateMouseButtonEvent(
+				1, (usercmd.buttons & BUTTON_ATTACK) != 0
+			);
+
+			const char* command = rewardMenu->HandleEvent(
+				&ev, gameLocal.time, &updateVisuals
+			);
+
+			if (!gameLocal.isClient) {
+				HandleGuiCommands(this, command);
+			}
+		}
+
+		return;
+	}
 
 	if ( !objectiveSystemOpen ) {
 		if ( idealWeapon != currentWeapon ) {
@@ -6588,6 +6697,65 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 
 	if ( token.Icmp( "ready" ) == 0 ) {
 		PerformImpulse( IMPULSE_17 );
+		return true;
+	}
+
+	// Handle Isaac reward menu selections.
+	int rewardIndex = -1;
+
+	if (token.Icmp("reward1") == 0) {
+		rewardIndex = 0;
+	}
+	else if (token.Icmp("reward2") == 0) {
+		rewardIndex = 1;
+	}
+	else if (token.Icmp("reward3") == 0) {
+		rewardIndex = 2;
+	}
+
+	if (rewardIndex >= 0) {
+		if (rewardMenuOpen && rewardChoices[rewardIndex] >= 0) {
+			const int selectedReward = rewardChoices[rewardIndex];
+			const char* rewardName = GetIsaacRewardName(selectedReward);
+
+			gameLocal.Printf("Isaac Reward: Selected %s\n", rewardName);
+			switch (rewardChoices[rewardIndex]) {
+			case 0:
+				UpgradeDamage();
+				break;
+
+			case 1:
+				UpgradeFireRate();
+				break;
+
+			case 2:
+				UpgradeSpeed();
+				break;
+
+			case 3:
+				UpgradeMaxHealth();
+				break;
+
+			case 4:
+				UpgradeProjectileSpeed();
+				break;
+
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+				SetIsaacWeaponMod(rewardChoices[rewardIndex] - 4);
+				break;
+			}
+
+			gameLocal.Printf("Isaac Reward: Applied %s\n", rewardName);
+			gameLocal.Printf("You received %s as a reward!\n", rewardName);
+
+			rewardMenuOpen = false;
+			rewardMenu->Activate(false, gameLocal.time);
+		}
+
 		return true;
 	}
 

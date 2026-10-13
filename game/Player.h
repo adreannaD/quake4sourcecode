@@ -364,6 +364,11 @@ public:
 	
 	idUserInterface *		objectiveSystem;
 	idUserInterface *		cinematicHud;
+
+	idUserInterface* rewardMenu;
+	bool rewardMenuOpen;
+	int rewardChoices[3];
+
 	bool					objectiveSystemOpen;
 	bool					objectiveButtonReleased;
 	bool					disableHud;
@@ -601,6 +606,9 @@ public:
 	void UpgradeSpeed(void);
 	void UpgradeMaxHealth(void);
 	void UpgradeProjectileSpeed(void);
+
+	//isaac menu system
+	void OpenIsaacRewardMenu(void);
 
 	int						SlotForWeapon				( const char *weaponName );
 

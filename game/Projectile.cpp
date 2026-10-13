@@ -562,7 +562,12 @@ void idProjectile::Think( void ) {
 				}
 
 				if (closestEnemy) {
-					idVec3 direction = closestEnemy->GetPhysics()->GetOrigin() - projectileOrigin;
+					idBounds enemyBounds = closestEnemy->GetPhysics()->GetBounds();
+
+					idVec3 targetPosition =
+						closestEnemy->GetPhysics()->GetOrigin() + enemyBounds.GetCenter();
+
+					idVec3 direction = targetPosition - projectileOrigin;
 					direction.Normalize();
 
 					float currentSpeed = physicsObj.GetLinearVelocity().Length();

@@ -54,6 +54,11 @@ void NotifySpawnLevelEnemyKilled(idAI* enemy) {
 		&& !spawnLevelEncounterCompleted) {
 		spawnLevelEncounterCompleted = true;
 		gameLocal.Printf("spawnLevel: ENCOUNTER COMPLETE!\n");
+
+		idPlayer* player = gameLocal.GetLocalPlayer();
+		if (player) {
+			player->OpenIsaacRewardMenu();
+		}
 	}
 }
 
