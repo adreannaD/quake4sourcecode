@@ -1206,20 +1206,33 @@ void Cmd_SpawnLevel_f(const idCmdArgs& args) {
 		return;
 	}
 
-	if (args.Argc() != 2) {
-		gameLocal.Printf("usage: spawnLevel <count>\n");
-		return;
+	int requestedCount;
+
+	if (args.Argc() == 1) {
+		// No count provided: randomly choose 1-10 enemies.
+		requestedCount = 1 + gameLocal.random.RandomInt(10);
+
+		gameLocal.Printf(
+			"spawnLevel: randomly selected %d enemies\n",
+			requestedCount
+		);
 	}
+	else if (args.Argc() == 2) {
+		// Count provided: use the requested number.
+		requestedCount = atoi(args.Argv(1));
 
-	int requestedCount = atoi(args.Argv(1));
+		if (requestedCount < 1) {
+			gameLocal.Printf("spawnLevel: count must be at least 1\n");
+			return;
+		}
 
-	if (requestedCount < 1) {
-		gameLocal.Printf("spawnLevel: count must be at least 1\n");
-		return;
+		if (requestedCount > 10) {
+			requestedCount = 10;
+		}
 	}
-
-	if (requestedCount > 10) {
-		requestedCount = 10;
+	else {
+		gameLocal.Printf("usage: spawnLevel [count]\n");
+		return;
 	}
 
 	static const char* enemyTypes[] = {
