@@ -12,7 +12,7 @@ A Quake 4 gameplay modification inspired by \*The Binding of Isaac\*. This mod i
 
 - A working installation of Quake 4.
 
-- The `thebindingofisaac\_mod` folder installed in the Quake 4 directory.
+- The `thebindingofisaac_mod` folder installed in the Quake 4 directory.
 
 - The mod's compiled game DLL and required game assets.
 
