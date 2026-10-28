@@ -45,27 +45,16 @@ The mod rethemes Quake 4's weapons with weapons and items inspired by \*The Bind
 
 
 | Original Quake 4 Weapon | Isaac-Inspired Retheme |
-
 |---|---|
-
 | Blaster | Isaac's Tears |
-
 | Machinegun | Soy Milk |
-
 | Shotgun | Mom's Shotgun |
-
 | Hyperblaster | Freezing Tears |
-
 | Grenade Launcher | Scatter Bombs |
-
 | Nailgun | Poison Tears |
-
 | Rocket Launcher | Brimstone |
-
 | Railgun | Haemolacria |
-
 | Lightning Gun | Chocolate Milk |
-
 | Dark Matter Gun | Death's Touch |
 
 
