@@ -2,7 +2,7 @@
 
 
 
-A Quake 4 gameplay modification inspired by \*The Binding of Isaac\*. This mod introduces Isaac-themed weapons, randomized enemy encounters, player upgrades, weapon modifications, and custom in-game interfaces.
+A Quake 4 gameplay modification inspired by *The Binding of Isaac*. This mod introduces Isaac-themed weapons, randomized enemy encounters, player upgrades, weapon modifications, and custom in-game interfaces.
 
 
 
@@ -40,7 +40,7 @@ A Quake 4 gameplay modification inspired by \*The Binding of Isaac\*. This mod i
 
 
 
-The mod rethemes Quake 4's weapons with weapons and items inspired by \*The Binding of Isaac\*.
+The mod rethemes Quake 4's weapons with weapons and items inspired by *The Binding of Isaac*.
 
 
 
